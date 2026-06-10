@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reference Viewer — accurate citation extraction</title>
+  <link rel="stylesheet" href="styles.css" />
+  <!-- Chart.js for venue pie charts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <!-- vis-network for the citation graph -->
+  <script src="https://cdn.jsdelivr.net/npm/vis-network@9.1.9/standalone/umd/vis-network.min.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">◷</span>
+      <div>
+        <h1>Reference&nbsp;Viewer</h1>
+        <p class="tagline">Accurate, no-hallucination citation extraction from scientific papers</p>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="src-note">Sources: OpenAlex · Crossref — queried directly from your browser</div>
+      <button id="themeToggle" class="theme-toggle" title="Toggle light / dark mode" aria-label="Toggle light or dark mode">🌙</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- Upload -->
+    <section id="dropzone" class="dropzone">
+      <input type="file" id="fileInput" accept=".pdf,application/pdf" multiple hidden />
+      <div class="drop-inner">
+        <div class="drop-icon">⇪</div>
+        <p><strong>Drop scientific papers here</strong> or <button id="browseBtn" class="link-btn">browse</button></p>
+        <p class="hint">One or many papers — preprints, journals, anything. We identify each paper, then pull its
+          <em>authoritative</em> reference list from scholarly databases. Uncertain matches are skipped, never guessed.
+          PDF files only.</p>
+      </div>
+      <p id="fileReject" class="reject-note hidden"></p>
+      <ul id="fileList" class="file-list"></ul>
+      <div class="actions">
+        <button id="analyzeBtn" class="primary-btn" disabled>Analyze</button>
+        <button id="clearBtn" class="ghost-btn" disabled>Clear</button>
+        <button id="examplesBtn" class="ghost-btn">Try the example papers</button>
+      </div>
+    </section>
+
+    <!-- Progress -->
+    <section id="progress" class="progress hidden">
+      <div class="spinner"></div>
+      <span id="progressText">Extracting references…</span>
+    </section>
+
+    <!-- Results -->
+    <section id="results" class="results hidden">
+      <!-- Summary band -->
+      <div id="summaryBand" class="summary-band"></div>
+
+      <!-- Export toolbar -->
+      <div id="exportBar" class="export-bar">
+        <span class="muted">Export resolved data:</span>
+        <button id="exportCsv" class="ghost-btn sm">References CSV</button>
+        <button id="exportJson" class="ghost-btn sm">Full JSON</button>
+      </div>
+
+      <!-- Citation map (multi-paper) -->
+      <div id="graphPanel" class="panel hidden">
+        <div class="panel-head">
+          <h2>Citation Map</h2>
+          <div class="legend">
+            <span class="lg"><i class="dot" style="background:#dc2626"></i>MIS Quarterly</span>
+            <span class="lg"><i class="dot" style="background:#2563eb"></i>Information Systems Research</span>
+            <span class="lg"><i class="dot" style="background:#1f2937"></i>Uploaded paper</span>
+            <span class="lg"><i class="dot" style="background:#6b7280"></i>Unidentified</span>
+            <span class="lg"><i class="ring"></i>Shared reference</span>
+          </div>
+        </div>
+        <div class="graph-controls">
+          <label><input type="checkbox" id="toggleShared" checked /> Show shared references (cited by ≥2 papers)</label>
+          <span id="graphStats" class="graph-stats"></span>
+        </div>
+        <div id="network" class="network"></div>
+        <div class="graph-hint muted">Tip: click a node for details · double-click to open its page · scroll/two-finger drag to pan · pinch (or ⌘/Ctrl + scroll) to zoom.</div>
+        <div id="nodeInfo" class="node-info hidden"></div>
+        <div id="graphEmpty" class="graph-empty hidden">No direct citations or shared references were found among these papers — each node is shown standalone. Upload papers that cite one another (or share a literature) to see links appear.</div>
+
+        <!-- Shared references: works cited by >= 2 of the uploaded papers -->
+        <div id="sharedRefs" class="shared-refs hidden">
+          <div class="shared-head">
+            <button id="sharedToggle" class="ref-toggle"></button>
+            <span class="muted" id="sharedHint"></span>
+          </div>
+          <div id="sharedScroll" class="ref-scroll hidden"></div>
+        </div>
+      </div>
+
+      <!-- Per-paper cards -->
+      <div id="paperCards" class="paper-cards"></div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span>Prototype · references resolved from authoritative database records — entries that cannot be confidently resolved are omitted.</span>
+  </footer>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
