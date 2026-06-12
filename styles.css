@@ -67,8 +67,17 @@ body {
   background: var(--topbar-bg); backdrop-filter: blur(8px);
   position: sticky; top: 0; z-index: 10;
 }
-.brand { display: flex; align-items: center; gap: 14px; min-width: 0; }
-.logo { font-size: 30px; color: var(--accent); }
+.brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.mc-home { display: inline-flex; align-items: center; gap: 8px; text-decoration: none; color: var(--text); flex: none; }
+.mc-home:hover .mc-home-name { color: var(--accent); }
+.mc-logo { border-radius: 8px; border: 1px solid var(--border); display: block; }
+.mc-home-name { font-size: 13.5px; font-weight: 600; letter-spacing: -.01em; }
+.mc-home-name span { color: var(--muted); font-weight: 400; }
+.mc-sep { color: var(--border); font-size: 16px; }
+/* Theme-dependent pairs: dark is the default; [data-theme="light"] flips both. */
+.mc-logo--light, .mc-icon-moon { display: none; }
+[data-theme="light"] .mc-logo--dark, [data-theme="light"] .mc-icon-sun { display: none; }
+[data-theme="light"] .mc-logo--light, [data-theme="light"] .mc-icon-moon { display: block; }
 .topbar h1 { margin: 0; font-size: 20px; letter-spacing: .3px; }
 .tagline { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
 .topbar-right { display: flex; align-items: center; gap: 14px; margin-left: auto; }
@@ -278,7 +287,7 @@ a:hover { text-decoration: underline; }
   main { padding: 18px 14px 48px; }
   .topbar { padding: 12px 14px; }
   .tagline { display: none; }
-  .logo { font-size: 24px; }
+  .mc-home-name { display: none; } /* the mascot alone is the way home */
   .topbar h1 { font-size: 17px; }
   .panel { padding: 16px; }
   .network { height: 420px; }

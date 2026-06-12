@@ -34,9 +34,8 @@ import { extractPdfInfo } from "./pdf-extract.js";
     getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 
   function applyTheme(theme) {
+    // The sun/moon icons inside #themeToggle swap via [data-theme] CSS rules.
     document.documentElement.dataset.theme = theme;
-    const btn = $("themeToggle");
-    if (btn) btn.textContent = theme === "light" ? "☀️" : "🌙";
     try { localStorage.setItem("refmap-theme", theme); } catch (_) {}
   }
 
