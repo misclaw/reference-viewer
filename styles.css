@@ -12,7 +12,7 @@
   --border-soft: #20242d;
   --text: #e7e9ee;
   --muted: #9aa3b2;
-  --accent: #4f7cff;
+  --accent: #7c9cff;
   --isr: #2563eb;
   --misq: #dc2626;
   --good: #22c55e;
@@ -37,7 +37,7 @@
   --border-soft: #e6eaf0;
   --text: #1a1f2b;
   --muted: #5a6475;
-  --accent: #2f6df6;
+  --accent: #3b5bdb;
   --shadow: 0 6px 24px rgba(30,41,59,.12);
   --topbar-bg: rgba(255,255,255,.72);
   --network-bg: #f8fafc;
@@ -276,7 +276,10 @@ a:hover { text-decoration: underline; }
 }
 @media (max-width: 640px) {
   main { padding: 18px 14px 48px; }
-  .topbar { padding: 14px 16px; }
+  .topbar { padding: 12px 14px; }
+  .tagline { display: none; }
+  .logo { font-size: 24px; }
+  .topbar h1 { font-size: 17px; }
   .panel { padding: 16px; }
   .network { height: 420px; }
   .stat-card { padding: 13px 14px; }
