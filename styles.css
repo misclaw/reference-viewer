@@ -300,3 +300,49 @@ a:hover { text-decoration: underline; }
   .pc-head { flex-direction: column; }
   .pc-badges { align-items: flex-start; }
 }
+
+/* ===== Add-to-MIS-Lit-Reviewer: per-row buttons + floating tray ===== */
+.ref-add-th { width: 30px; padding: 6px 4px !important; }
+.ref-add-cell { width: 30px; padding: 5px 4px !important; text-align: center; }
+.ref-add-btn {
+  width: 22px; height: 22px; line-height: 1; padding: 0; border-radius: 6px;
+  border: 1px solid var(--border); background: var(--panel-2); color: var(--muted);
+  font-size: 14px; cursor: pointer; transition: border-color .12s, color .12s, background .12s;
+}
+.ref-add-btn:hover { border-color: var(--accent); color: var(--accent); }
+.ref-add-btn.in {
+  border-color: var(--good); color: #fff; background: var(--good); font-size: 12px;
+}
+
+.litrev-tray {
+  position: fixed; left: 50%; bottom: 22px; transform: translate(-50%, 28px);
+  display: none; align-items: center; gap: 12px; z-index: 60;
+  max-width: calc(100vw - 16px); padding: 10px 12px 10px 18px; border-radius: 999px;
+  background: var(--panel); border: 1px solid var(--border); box-shadow: var(--shadow);
+  opacity: 0; transition: opacity .18s ease, transform .18s ease;
+}
+.litrev-tray.show { display: flex; opacity: 1; transform: translate(-50%, 0); }
+.litrev-count { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums;
+  white-space: nowrap; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.litrev-send { flex: none; }
+.litrev-send {
+  border: none; border-radius: 999px; cursor: pointer; padding: 8px 16px;
+  font-size: 13px; font-weight: 600; color: #fff;
+  background: var(--accent); box-shadow: 0 2px 10px rgba(124,156,255,.35);
+}
+.litrev-send:hover { filter: brightness(1.08); }
+.litrev-clear {
+  border: 1px solid var(--border); background: var(--panel-2); color: var(--muted);
+  width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 13px; line-height: 1;
+}
+.litrev-clear:hover { border-color: var(--bad); color: var(--bad); }
+
+.rv-toast {
+  position: fixed; left: 50%; bottom: 80px; transform: translate(-50%, 12px);
+  max-width: min(440px, 92vw); z-index: 70;
+  padding: 11px 16px; border-radius: 12px; font-size: 13px; line-height: 1.45;
+  background: var(--panel); color: var(--text);
+  border: 1px solid var(--border); box-shadow: var(--shadow);
+  opacity: 0; pointer-events: none; transition: opacity .2s ease, transform .2s ease;
+}
+.rv-toast.show { opacity: 1; transform: translate(-50%, 0); }

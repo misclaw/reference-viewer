@@ -83,6 +83,14 @@ dropped, never guessed. See the recovery section of `core.js`.
   pies, bars, venue pills, and graph nodes. Venue-name variants
   (`MIS Q.`, `Management Information Systems Quarterly`, …) are normalized so
   they collapse into one slice.
+- **Add to MIS Lit Reviewer** — every resolved reference (and every shared
+  reference) carries a **+** button that drops it into a selection tray; the
+  floating **"Add to MIS Lit Reviewer ▸"** bar opens
+  [mis-lit-reviewer](https://mis-lit-reviewer.misclaw.app) where you pick which
+  **stream(s)** to file the papers into — one paper can join several at once
+  (like adding a song to multiple playlists). The selection is encoded in the
+  URL fragment (`handoff.js`); nothing is uploaded, and because the two apps are
+  separate origins the stream picker deliberately lives on the reviewer side.
 
 ## Architecture (no build step — plain ES modules)
 

@@ -2,6 +2,7 @@
  * pipeline runs in the browser; OpenAlex/Crossref are queried directly). */
 import * as core from "./core.js";
 import { extractPdfInfo } from "./pdf-extract.js";
+import { encodeHandoff, paperKey } from "./handoff.js";
 
 (() => {
   "use strict";
@@ -28,6 +29,13 @@ import { extractPdfInfo } from "./pdf-extract.js";
   let network = null;
   let lastGraph = null;
   let lastData = null; // full last analysis result (for export)
+
+  // ---- "add to MIS Lit Reviewer" tray (like a playlist cart) ---------
+  // Discovered references / shared references the user has selected to hand off
+  // to mis-lit-reviewer. `tray` holds the trimmed records to send; `refRegistry`
+  // maps a paperKey → record so a row's button click can resolve its paper.
+  const tray = new Map();        // paperKey -> { title, authors, year, venue, doi, url }
+  const refRegistry = new Map(); // paperKey -> same record, for click lookups
 
   // ---- theme (dark / light) -----------------------------------------
   const cssVar = (name) =>
@@ -227,10 +235,12 @@ import { extractPdfInfo } from "./pdf-extract.js";
     charts.length = 0;
     $("results").classList.remove("hidden");
 
+    rebuildRefRegistry(data);
     renderSummary(data);
     renderGraph(data.graph);
     renderSharedList(data.graph);
     renderCards(data.papers);
+    renderTray();
     $("results").scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
@@ -310,6 +320,7 @@ import { extractPdfInfo } from "./pdf-extract.js";
         : escapeHtml(n.title || "(untitled)");
       const citers = (n.citers || []).map((c) => c.label).join("; ");
       return `<tr>
+        ${addBtnCell(n)}
         <td>${n.year ?? ""}</td>
         <td>${titleCell}${authors}</td>
         <td><span class="vpill" style="background:${venueColor(n.venue)}">${escapeHtml(n.venue || "(unknown)")}</span></td>
@@ -317,7 +328,7 @@ import { extractPdfInfo } from "./pdf-extract.js";
       </tr>`;
     }).join("");
     return `<table class="ref-table">
-      <thead><tr><th>Year</th><th>Title</th><th>Venue</th><th>Cited&nbsp;by</th></tr></thead>
+      <thead><tr><th class="ref-add-th" title="Add to MIS Lit Reviewer"></th><th>Year</th><th>Title</th><th>Venue</th><th>Cited&nbsp;by</th></tr></thead>
       <tbody>${rows}</tbody></table>`;
   }
 
@@ -669,6 +680,7 @@ import { extractPdfInfo } from "./pdf-extract.js";
     const arrow = (key) => (sortKey === key ? (sortDir < 0 ? " ▼" : " ▲") : "");
     const rows = refs.map((r) => `
       <tr>
+        ${addBtnCell(r)}
         <td>${r.year ?? ""}</td>
         <td>${escapeHtml(r.title || "")}${r.authors && r.authors.length ? `<br><span class="muted" style="font-size:11px">${escapeHtml(r.authors.slice(0, 4).join(", "))}${r.authors.length > 4 ? " et al." : ""}</span>` : ""}</td>
         <td><span class="vpill" style="background:${venueColor(r.venue)}">${escapeHtml(r.venue || "(unknown)")}</span></td>
@@ -676,6 +688,7 @@ import { extractPdfInfo } from "./pdf-extract.js";
       </tr>`).join("");
     return `<table class="ref-table">
       <thead><tr>
+        <th class="ref-add-th" title="Add to MIS Lit Reviewer"></th>
         <th class="sortable-th" data-key="year">Year${arrow("year")}</th>
         <th class="sortable-th" data-key="title">Title${arrow("title")}</th>
         <th class="sortable-th" data-key="venue">Venue${arrow("venue")}</th>
@@ -774,4 +787,105 @@ import { extractPdfInfo } from "./pdf-extract.js";
     return String(s ?? "").replace(/[&<>"']/g, (m) =>
       ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m]));
   }
+
+  // ---- MIS Lit Reviewer hand-off (tray + floating bar) --------------
+  // Every discovered paper (cited reference or shared reference) gets a small
+  // "+" button. Clicking adds it to a tray; the floating bar opens
+  // mis-lit-reviewer with the selection encoded in the URL (handoff.js), where
+  // the user picks which stream(s) to drop them into.
+
+  // Index every discoverable paper so a button click can resolve its record.
+  function rebuildRefRegistry(data) {
+    refRegistry.clear();
+    const add = (rec) => {
+      if (!rec || !(rec.title || rec.doi)) return;
+      const key = paperKey(rec);
+      if (!refRegistry.has(key)) refRegistry.set(key, {
+        title: rec.title || null,
+        authors: Array.isArray(rec.authors) ? rec.authors : [],
+        year: rec.year ?? null,
+        venue: rec.venue || null,
+        doi: rec.doi || null,
+        url: rec.url || null,
+      });
+    };
+    (data.papers || []).forEach((p) => (p.references || []).forEach(add));
+    (data.graph?.nodes || []).filter((n) => n.type === "shared_ref").forEach(add);
+  }
+
+  function addBtnCell(rec) {
+    const key = paperKey(rec);
+    const inTray = tray.has(key);
+    return `<td class="ref-add-cell"><button type="button" class="ref-add-btn${inTray ? " in" : ""}" `
+      + `data-key="${escapeHtml(key)}" aria-pressed="${inTray}" `
+      + `title="${inTray ? "In your Lit Reviewer tray — click to remove" : "Add to MIS Lit Reviewer"}">`
+      + `${inTray ? "✓" : "+"}</button></td>`;
+  }
+
+  function paintBtn(b) {
+    const inTray = tray.has(b.dataset.key);
+    b.classList.toggle("in", inTray);
+    b.setAttribute("aria-pressed", String(inTray));
+    b.textContent = inTray ? "✓" : "+";
+    b.title = inTray ? "In your Lit Reviewer tray — click to remove" : "Add to MIS Lit Reviewer";
+  }
+
+  function toggleTray(key) {
+    if (tray.has(key)) tray.delete(key);
+    else { const rec = refRegistry.get(key); if (rec) tray.set(key, rec); }
+    // a key can appear in more than one table (refs + shared) — sync them all
+    document.querySelectorAll(".ref-add-btn").forEach((b) => { if (b.dataset.key === key) paintBtn(b); });
+    renderTray();
+  }
+
+  let trayBarEl = null;
+  function renderTray() {
+    if (!trayBarEl) {
+      trayBarEl = document.createElement("div");
+      trayBarEl.className = "litrev-tray";
+      trayBarEl.innerHTML =
+        `<span class="litrev-count"></span>`
+        + `<button type="button" class="litrev-send">Add to MIS&nbsp;Lit&nbsp;Reviewer&nbsp;▸</button>`
+        + `<button type="button" class="litrev-clear" title="Clear selection" aria-label="Clear selection">✕</button>`;
+      document.body.appendChild(trayBarEl);
+      trayBarEl.querySelector(".litrev-send").addEventListener("click", sendTray);
+      trayBarEl.querySelector(".litrev-clear").addEventListener("click", clearTray);
+    }
+    const n = tray.size;
+    trayBarEl.classList.toggle("show", n > 0);
+    trayBarEl.querySelector(".litrev-count").textContent = `${n} paper${n === 1 ? "" : "s"} selected`;
+  }
+
+  function clearTray() {
+    tray.clear();
+    document.querySelectorAll(".ref-add-btn").forEach(paintBtn);
+    renderTray();
+  }
+
+  function sendTray() {
+    if (!tray.size) return;
+    const keys = [...tray.keys()];
+    const { url, sent, total, dropped } = encodeHandoff(keys.map((k) => tray.get(k)));
+    const win = window.open(url, "_blank", "noopener");
+    if (!win) { toast("Your browser blocked the new tab — allow pop-ups for this site, then try again."); return; }
+    keys.slice(0, sent).forEach((k) => tray.delete(k)); // drop only what we actually sent
+    document.querySelectorAll(".ref-add-btn").forEach(paintBtn);
+    if (dropped > 0) toast(`Sent ${sent} of ${total}. ${dropped} still in your tray — the link can't hold them all; click “Add to MIS Lit Reviewer” again to send the rest.`);
+    renderTray();
+  }
+
+  let toastEl = null, toastTimer = null;
+  function toast(msg) {
+    if (!toastEl) { toastEl = document.createElement("div"); toastEl.className = "rv-toast"; document.body.appendChild(toastEl); }
+    toastEl.textContent = msg;
+    toastEl.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toastEl.classList.remove("show"), 6000);
+  }
+
+  // One delegated listener survives every sort/filter re-render of the tables.
+  document.addEventListener("click", (e) => {
+    const btn = e.target.closest && e.target.closest(".ref-add-btn");
+    if (btn) { e.preventDefault(); toggleTray(btn.dataset.key); }
+  });
 })();
