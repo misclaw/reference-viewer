@@ -33,10 +33,27 @@ import { extractPdfInfo } from "./pdf-extract.js";
   const cssVar = (name) =>
     getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 
+  function persistTheme(theme) {
+    // Pin to a cookie on .misclaw.app so the light/dark choice stays in sync
+    // across every *.misclaw.app site; localStorage is the same-origin fallback.
+    try {
+      localStorage.setItem("theme", theme);
+      localStorage.setItem("refmap-theme", theme);
+    } catch (_) {}
+    try {
+      let c = "mc-theme=" + theme + ";path=/;max-age=31536000;samesite=lax";
+      if (location.hostname === "misclaw.app" || location.hostname.endsWith(".misclaw.app")) {
+        c += ";domain=.misclaw.app";
+      }
+      if (location.protocol === "https:") c += ";secure";
+      document.cookie = c;
+    } catch (_) {}
+  }
+
   function applyTheme(theme) {
     // The sun/moon icons inside #themeToggle swap via [data-theme] CSS rules.
     document.documentElement.dataset.theme = theme;
-    try { localStorage.setItem("refmap-theme", theme); } catch (_) {}
+    persistTheme(theme);
   }
 
   function restyleForTheme() {
@@ -51,11 +68,14 @@ import { extractPdfInfo } from "./pdf-extract.js";
   }
 
   (() => {
-    let saved = null;
-    try { saved = localStorage.getItem("refmap-theme"); } catch (_) {}
+    // The pre-paint reader in index.html may have already pinned a theme from
+    // the shared .misclaw.app cookie / localStorage — trust it; otherwise follow
+    // the system preference.
+    const pre = document.documentElement.dataset.theme;
+    if (pre === "light" || pre === "dark") { applyTheme(pre); return; }
     const prefersLight = window.matchMedia &&
       window.matchMedia("(prefers-color-scheme: light)").matches;
-    applyTheme(saved || (prefersLight ? "light" : "dark"));
+    applyTheme(prefersLight ? "light" : "dark");
   })();
 
   $("themeToggle").addEventListener("click", () => {

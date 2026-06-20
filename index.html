@@ -6,6 +6,18 @@
   <title>Reference Viewer — accurate citation extraction</title>
   <link rel="icon" type="image/png" href="misclaw.png" />
   <link rel="stylesheet" href="styles.css" />
+  <script>
+    // Shared misclaw theme: a cookie scoped to .misclaw.app keeps the light/dark
+    // choice in sync across every *.misclaw.app site; localStorage is the
+    // same-origin fallback (local dev). Read before paint to avoid a flash.
+    (function () {
+      try {
+        var m = document.cookie.match(/(?:^|;\s*)mc-theme=(light|dark)\b/);
+        var t = m ? m[1] : (localStorage.getItem("theme") || localStorage.getItem("refmap-theme"));
+        if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    })();
+  </script>
   <!-- Chart.js for venue pie charts -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <!-- vis-network for the citation graph -->
